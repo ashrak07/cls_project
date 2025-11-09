@@ -2,6 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 const morgan = require("morgan");
+const path = require("path");
 const { connectDB } = require("./config/database");
 
 connectDB();
@@ -21,6 +22,9 @@ app.use("/api", require("./routes/commandeRoute"));
 app.use("/api", require("./routes/arriveeRoute"));
 app.use("/api", require("./routes/categoryRoute"));
 app.use("/api", require("./routes/characteristicRoute"));
+
+// Static files for uploads
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Healthcheck
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
