@@ -29,24 +29,23 @@
               Ajouter
             </v-btn>
           </div>
-          <v-divider></v-divider>
+          <v-divider />
         </template>
 
-        <!-- Colonnes actions -->
         <template #item.actions="{ item }">
-          <v-btn icon color="primary" @click="voirVendeur(item)" title="Voir">
-            <v-icon icon="mdi-eye"></v-icon>
+          <v-btn icon class="action-btn view" @click="voirVendeur(item)" title="Voir">
+            <v-icon icon="mdi-eye-outline" />
           </v-btn>
-          <v-btn icon color="orange" @click="modifierVendeur(item)" title="Modifier">
-            <v-icon icon="mdi-pencil"></v-icon>
+          <v-btn icon class="action-btn edit" @click="modifierVendeur(item)" title="Modifier">
+            <v-icon icon="mdi-pencil-outline" />
           </v-btn>
-          <v-btn icon color="red" @click="supprimerVendeur(item)" title="Supprimer">
-            <v-icon icon="mdi-delete"></v-icon>
+          <v-btn icon class="action-btn delete" @click="supprimerVendeur(item)" title="Supprimer">
+            <v-icon icon="mdi-delete-outline" />
           </v-btn>
         </template>
 
         <template #no-data>
-          <div class="px-4 py-8 text-medium-emphasis">Aucune donnée</div>
+          <div class="px-4 py-8 text-medium-emphasis">Aucune donnee</div>
         </template>
       </v-data-table>
     </v-card>
@@ -54,12 +53,12 @@
     <!-- Dialog: Voir -->
     <v-dialog v-model="dialogView" max-width="520">
       <v-card>
-        <v-card-title class="text-h6">Détails du vendeur</v-card-title>
+        <v-card-title class="text-h6">Details du vendeur</v-card-title>
         <v-card-text v-if="selected">
           <div><strong>Nom:</strong> {{ selected.nom }}</div>
           <div><strong>Adresse:</strong> {{ selected.adresse }}</div>
           <div><strong>CIN:</strong> {{ selected.cin }}</div>
-          <div><strong>Téléphone:</strong> {{ selected.telephone }}</div>
+          <div><strong>Telephone:</strong> {{ selected.telephone }}</div>
           <div><strong>Email:</strong> {{ selected.email }}</div>
         </v-card-text>
         <v-card-actions>
@@ -74,17 +73,16 @@
       <v-card>
         <v-card-title class="text-h6">Confirmer la suppression</v-card-title>
         <v-card-text>
-          Supprimer <strong>{{ selected?.nom }}</strong> ? Cette action est irréversible.
+          Supprimer <strong>{{ selected?.nom }}</strong> ? Cette action est irreversible.
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="dialogDelete = false">Annuler</v-btn>
-          <v-btn color="red" variant="flat" @click="confirmDelete">Supprimer</v-btn>
+          <v-btn class="danger-btn" @click="confirmDelete">Supprimer</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Snackbar pour notifications -->
     <v-snackbar v-model="snackbar" color="success" timeout="3000">
       {{ snackbarMessage }}
     </v-snackbar>
@@ -94,7 +92,8 @@
 <script setup>
 import { ref } from "vue";
 
-// Données fictives
+const emit = defineEmits(["open-add"]);
+
 const vendeurs = ref([
   {
     id: 1,
@@ -122,12 +121,11 @@ const vendeurs = ref([
   },
 ]);
 
-// Headers du tableau (Vuetify 3)
 const headers = [
   { title: "Nom", key: "nom" },
   { title: "Adresse", key: "adresse" },
   { title: "CIN", key: "cin" },
-  { title: "Téléphone", key: "telephone" },
+  { title: "Telephone", key: "telephone" },
   { title: "Email", key: "email" },
   { title: "Actions", key: "actions", sortable: false },
 ];
@@ -140,11 +138,9 @@ const dialogDelete = ref(false);
 const selected = ref(null);
 
 const goToAdd = () => {
-  snackbarMessage.value = "Ouvrez le menu Vendeur > Ajout pour créer";
-  snackbar.value = true;
+  emit("open-add", "vendeur-ajout");
 };
 
-// Fonctions actions
 const voirVendeur = (item) => {
   selected.value = item;
   dialogView.value = true;
@@ -163,15 +159,11 @@ const supprimerVendeur = (item) => {
 const confirmDelete = () => {
   if (!selected.value) return;
   vendeurs.value = vendeurs.value.filter((v) => v.id !== selected.value.id);
-  snackbarMessage.value = `${selected.value.nom} supprimé`;
+  snackbarMessage.value = `${selected.value.nom} supprime`;
   snackbar.value = true;
   dialogDelete.value = false;
   selected.value = null;
 };
 </script>
 
-<style scoped>
-.v-btn {
-  margin-right: 4px;
-}
-</style>
+<style scoped></style>

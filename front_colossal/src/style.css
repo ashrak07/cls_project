@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+:root {
+  --v-font-family: "Roboto", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--v-font-family);
+}
+
+body,
+.v-application {
+  font-family: var(--v-font-family);
+}

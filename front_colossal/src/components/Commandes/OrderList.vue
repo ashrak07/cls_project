@@ -24,8 +24,12 @@
               clearable
               class="flex-grow-1"
             />
+            <v-btn color="primary" variant="flat" @click="goToAdd">
+              <v-icon icon="mdi-plus" class="mr-2" />
+              Ajouter
+            </v-btn>
           </div>
-          <v-divider></v-divider>
+          <v-divider />
         </template>
 
         <template #item.total="{ item }">
@@ -33,25 +37,29 @@
         </template>
 
         <template #item.statut="{ value }">
-          <v-chip :color="statusColor(value)" size="small" variant="flat">
+          <v-chip
+            size="small"
+            variant="flat"
+            :class="['status-chip', statusClass(value)]"
+          >
             {{ value }}
           </v-chip>
         </template>
 
         <template #item.actions="{ item }">
-          <v-btn icon color="primary" @click="voir(item)" title="Voir">
-            <v-icon icon="mdi-eye"></v-icon>
+          <v-btn icon class="action-btn view" @click="voir(item)" title="Voir">
+            <v-icon icon="mdi-eye-outline" />
           </v-btn>
-          <v-btn icon color="orange" @click="editer(item)" title="Éditer">
-            <v-icon icon="mdi-pencil"></v-icon>
+          <v-btn icon class="action-btn edit" @click="editer(item)" title="Editer">
+            <v-icon icon="mdi-pencil-outline" />
           </v-btn>
-          <v-btn icon color="red" @click="supprimer(item)" title="Supprimer">
-            <v-icon icon="mdi-delete"></v-icon>
+          <v-btn icon class="action-btn delete" @click="supprimer(item)" title="Supprimer">
+            <v-icon icon="mdi-delete-outline" />
           </v-btn>
         </template>
 
         <template #no-data>
-          <div class="px-4 py-8 text-medium-emphasis">Aucune donnée</div>
+          <div class="px-4 py-8 text-medium-emphasis">Aucune donnee</div>
         </template>
       </v-data-table>
     </v-card>
@@ -59,11 +67,11 @@
     <!-- Dialog: Voir -->
     <v-dialog v-model="dialogView" max-width="900">
       <v-card>
-        <v-card-title class="text-h6">Détails de la commande</v-card-title>
+        <v-card-title class="text-h6">Details de la commande</v-card-title>
         <v-card-text v-if="selected">
           <v-row>
             <v-col cols="12" md="6">
-              <div><strong>Numéro:</strong> {{ selected.numero }}</div>
+              <div><strong>Numero:</strong> {{ selected.numero }}</div>
               <div><strong>Client:</strong> {{ selected.clientNom }}</div>
               <div><strong>Date:</strong> {{ selected.date }}</div>
             </v-col>
@@ -82,7 +90,7 @@
               <tr>
                 <th class="text-left">Produit</th>
                 <th class="text-right">Prix</th>
-                <th class="text-right">Qté</th>
+                <th class="text-right">Qt</th>
                 <th class="text-right">Total</th>
               </tr>
             </thead>
@@ -105,10 +113,10 @@
       </v-card>
     </v-dialog>
 
-    <!-- Dialog: Éditer -->
+    <!-- Dialog: Editer -->
     <v-dialog v-model="dialogEdit" max-width="640">
       <v-card>
-        <v-card-title class="text-h6">Éditer la commande</v-card-title>
+        <v-card-title class="text-h6">Editer la commande</v-card-title>
         <v-card-text>
           <v-form ref="editForm" v-model="editValid" lazy-validation>
             <v-row>
@@ -148,8 +156,9 @@
             variant="flat"
             :disabled="!editValid"
             @click="saveEdit"
-            >Enregistrer</v-btn
           >
+            Enregistrer
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -164,9 +173,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="dialogDelete = false">Annuler</v-btn>
-          <v-btn color="red" variant="flat" @click="confirmDelete"
-            >Supprimer</v-btn
-          >
+          <v-btn class="danger-btn" @click="confirmDelete">Supprimer</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -180,10 +187,11 @@
 <script setup>
 import { ref } from "vue";
 
-const statuts = ["Nouveau", "Payé", "En attente", "Annulé"];
-const modesPaiement = ["Espèces", "Mobile Money", "Carte", "Virement"];
+const emit = defineEmits(["open-add"]);
 
-// Données fictives
+const statuts = ["Nouveau", "Paye", "En attente", "Annule"];
+const modesPaiement = ["Especes", "Mobile Money", "Carte", "Virement"];
+
 const orders = ref([
   {
     id: 1,
@@ -191,7 +199,7 @@ const orders = ref([
     clientNom: "Rasoa Andry",
     date: "2025-01-12",
     statut: "Nouveau",
-    modePaiement: "Espèces",
+    modePaiement: "Especes",
     dateLivraison: "",
     lignes: [
       { produit: "Casque Bluetooth", prix: 120000, quantite: 1 },
@@ -203,7 +211,7 @@ const orders = ref([
     numero: "CMD-2025-002",
     clientNom: "Rakoto Jean",
     date: "2025-02-05",
-    statut: "Payé",
+    statut: "Paye",
     modePaiement: "Mobile Money",
     dateLivraison: "2025-02-08",
     lignes: [{ produit: "Mixeur", prix: 95000, quantite: 1 }],
@@ -224,7 +232,7 @@ const orders = ref([
 ]);
 
 const headers = [
-  { title: "N°", key: "numero" },
+  { title: "No", key: "numero" },
   { title: "Client", key: "clientNom" },
   { title: "Date", key: "date" },
   { title: "Statut", key: "statut" },
@@ -270,18 +278,18 @@ const totalFor = (order) =>
     0
   );
 
-const statusColor = (statut) => {
+const statusClass = (statut) => {
   switch (statut) {
-    case "Payé":
-      return "green";
+    case "Paye":
+      return "status-paid";
     case "Nouveau":
-      return "blue";
+      return "status-new";
     case "En attente":
-      return "orange";
-    case "Annulé":
-      return "red";
+      return "status-pending";
+    case "Annule":
+      return "status-cancelled";
     default:
-      return "grey";
+      return "status-default";
   }
 };
 
@@ -307,7 +315,7 @@ const saveEdit = async () => {
   const idx = orders.value.findIndex((o) => o.id === editOrder.value.id);
   if (idx !== -1)
     orders.value[idx] = { ...orders.value[idx], ...editOrder.value };
-  snackbarMessage.value = "Commande mise à jour";
+  snackbarMessage.value = "Commande mise a jour";
   snackbar.value = true;
   dialogEdit.value = false;
 };
@@ -320,10 +328,14 @@ const supprimer = (item) => {
 const confirmDelete = () => {
   if (!selected.value) return;
   orders.value = orders.value.filter((o) => o.id !== selected.value.id);
-  snackbarMessage.value = "Commande supprimée";
+  snackbarMessage.value = "Commande supprimee";
   snackbar.value = true;
   dialogDelete.value = false;
   selected.value = null;
+};
+
+const goToAdd = () => {
+  emit("open-add", "commande-creer");
 };
 </script>
 

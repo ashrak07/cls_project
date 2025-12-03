@@ -24,27 +24,48 @@
               clearable
               class="flex-grow-1"
             />
+            <v-btn color="primary" variant="flat" @click="goToAdd">
+              <v-icon icon="mdi-plus" class="mr-2" />
+              Ajouter
+            </v-btn>
           </div>
-          <v-divider></v-divider>
+          <v-divider />
         </template>
 
         <template #item.actif="{ value }">
-          <v-chip :color="value ? 'green' : 'grey'" size="small" variant="flat">
-            {{ value ? 'Actif' : 'Inactif' }}
+          <v-chip
+            size="small"
+            variant="flat"
+            :class="['status-chip', value ? 'active' : 'inactive']"
+          >
+            {{ value ? "Actif" : "Inactif" }}
           </v-chip>
         </template>
 
         <template #item.actions="{ item }">
-          <v-btn icon color="primary" @click="voirClient(item)" title="Voir">
-            <v-icon icon="mdi-eye"></v-icon>
+          <v-btn icon class="action-btn view" @click="voirClient(item)" title="Voir">
+            <v-icon icon="mdi-eye-outline" />
           </v-btn>
-          <v-btn icon color="orange" @click="editerClient(item)" title="Éditer">
-            <v-icon icon="mdi-pencil"></v-icon>
+          <v-btn
+            icon
+            class="action-btn edit"
+            @click="editerClient(item)"
+            title="Editer"
+          >
+            <v-icon icon="mdi-pencil-outline" />
+          </v-btn>
+          <v-btn
+            icon
+            class="action-btn delete"
+            @click="supprimerClient(item)"
+            title="Supprimer"
+          >
+            <v-icon icon="mdi-delete-outline" />
           </v-btn>
         </template>
 
         <template #no-data>
-          <div class="px-4 py-8 text-medium-emphasis">Aucune donnée</div>
+          <div class="px-4 py-8 text-medium-emphasis">Aucune donnee</div>
         </template>
       </v-data-table>
     </v-card>
@@ -52,19 +73,23 @@
     <!-- Dialog: Voir -->
     <v-dialog v-model="dialogView" max-width="560">
       <v-card>
-        <v-card-title class="text-h6">Détails du client</v-card-title>
+        <v-card-title class="text-h6">Details du client</v-card-title>
         <v-card-text v-if="selected">
           <div class="mb-1"><strong>Nom:</strong> {{ selected.nom }}</div>
-          <div class="mb-1"><strong>Pseudo Facebook:</strong> {{ selected.pseudoFacebook || '-' }}</div>
-          <div class="mb-1"><strong>Téléphone:</strong> {{ selected.telephone }}</div>
-          <div class="mb-1"><strong>Email:</strong> {{ selected.email || '-' }}</div>
-          <div class="mb-1"><strong>Adresse:</strong> {{ selected.adresse || '-' }}</div>
-          <div class="mb-1"><strong>Ville:</strong> {{ selected.ville || '-' }}</div>
-          <div class="mb-1"><strong>CIN:</strong> {{ selected.cin || '-' }}</div>
-          <div class="mb-1"><strong>Date de naissance:</strong> {{ selected.dateNaissance || '-' }}</div>
-          <div class="mb-1"><strong>Genre:</strong> {{ selected.genre || '-' }}</div>
-          <div class="mb-1"><strong>Statut:</strong> {{ selected.actif ? 'Actif' : 'Inactif' }}</div>
-          <div class="mb-1"><strong>Notes:</strong> {{ selected.notes || '-' }}</div>
+          <div class="mb-1">
+            <strong>Pseudo Facebook:</strong> {{ selected.pseudoFacebook || "-" }}
+          </div>
+          <div class="mb-1"><strong>Telephone:</strong> {{ selected.telephone }}</div>
+          <div class="mb-1"><strong>Email:</strong> {{ selected.email || "-" }}</div>
+          <div class="mb-1"><strong>Adresse:</strong> {{ selected.adresse || "-" }}</div>
+          <div class="mb-1"><strong>Ville:</strong> {{ selected.ville || "-" }}</div>
+          <div class="mb-1"><strong>CIN:</strong> {{ selected.cin || "-" }}</div>
+          <div class="mb-1">
+            <strong>Date de naissance:</strong> {{ selected.dateNaissance || "-" }}
+          </div>
+          <div class="mb-1"><strong>Genre:</strong> {{ selected.genre || "-" }}</div>
+          <div class="mb-1"><strong>Statut:</strong> {{ selected.actif ? "Actif" : "Inactif" }}</div>
+          <div class="mb-1"><strong>Notes:</strong> {{ selected.notes || "-" }}</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -73,10 +98,10 @@
       </v-card>
     </v-dialog>
 
-    <!-- Dialog: Éditer -->
+    <!-- Dialog: Editer -->
     <v-dialog v-model="dialogEdit" max-width="720">
       <v-card>
-        <v-card-title class="text-h6">Éditer le client</v-card-title>
+        <v-card-title class="text-h6">Editer le client</v-card-title>
         <v-card-text>
           <v-form ref="editForm" v-model="editValid" lazy-validation>
             <v-row>
@@ -100,7 +125,7 @@
               <v-col cols="12" md="4">
                 <v-text-field
                   v-model="editClient.telephone"
-                  label="Téléphone"
+                  label="Telephone"
                   :rules="[rules.required, rules.phone]"
                   variant="outlined"
                 />
@@ -135,6 +160,21 @@
       </v-card>
     </v-dialog>
 
+    <!-- Dialog: Supprimer -->
+    <v-dialog v-model="dialogDelete" max-width="520">
+      <v-card>
+        <v-card-title class="text-h6">Supprimer le client</v-card-title>
+        <v-card-text>
+          Confirmer la suppression de <strong>{{ selected?.nom }}</strong> ?
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="dialogDelete = false">Annuler</v-btn>
+          <v-btn class="danger-btn" @click="confirmDelete">Supprimer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-snackbar v-model="snackbar" color="success" timeout="3000">
       {{ snackbarMessage }}
     </v-snackbar>
@@ -144,16 +184,57 @@
 <script setup>
 import { ref } from "vue";
 
+const emit = defineEmits(["open-add"]);
+
 const clients = ref([
-  { id: 1, nom: "Rasoa Andry", pseudoFacebook: "rasoa.andry", telephone: "+261341112233", email: "rasoa@example.com", adresse: "Lot II A 123", ville: "Antananarivo", cin: "AB123456", dateNaissance: "1992-05-10", genre: "Femme", actif: true, notes: "Cliente fidèle" },
-  { id: 2, nom: "Rakoto Jean", pseudoFacebook: "rakoto.jean", telephone: "+261339998877", email: "rakoto@example.com", adresse: "Lot III B 456", ville: "Fianarantsoa", cin: "CD789012", dateNaissance: "1988-11-02", genre: "Homme", actif: false, notes: "" },
-  { id: 3, nom: "Hanitra Paul", pseudoFacebook: "hanitra.paul", telephone: "+261322223344", email: "", adresse: "Rue des Palmiers", ville: "Toamasina", cin: "", dateNaissance: "", genre: "", actif: true, notes: "Préférence contact Facebook" },
+  {
+    id: 1,
+    nom: "Rasoa Andry",
+    pseudoFacebook: "rasoa.andry",
+    telephone: "+261341112233",
+    email: "rasoa@example.com",
+    adresse: "Lot II A 123",
+    ville: "Antananarivo",
+    cin: "AB123456",
+    dateNaissance: "1992-05-10",
+    genre: "Femme",
+    actif: true,
+    notes: "Cliente fidele",
+  },
+  {
+    id: 2,
+    nom: "Rakoto Jean",
+    pseudoFacebook: "rakoto.jean",
+    telephone: "+261339998877",
+    email: "rakoto@example.com",
+    adresse: "Lot III B 456",
+    ville: "Fianarantsoa",
+    cin: "CD789012",
+    dateNaissance: "1988-11-02",
+    genre: "Homme",
+    actif: false,
+    notes: "",
+  },
+  {
+    id: 3,
+    nom: "Hanitra Paul",
+    pseudoFacebook: "hanitra.paul",
+    telephone: "+261322223344",
+    email: "",
+    adresse: "Rue des Palmiers",
+    ville: "Toamasina",
+    cin: "",
+    dateNaissance: "",
+    genre: "",
+    actif: true,
+    notes: "Preference contact Facebook",
+  },
 ]);
 
 const headers = [
   { title: "Nom", key: "nom" },
   { title: "Facebook", key: "pseudoFacebook" },
-  { title: "Téléphone", key: "telephone" },
+  { title: "Telephone", key: "telephone" },
   { title: "Email", key: "email" },
   { title: "Ville", key: "ville" },
   { title: "Statut", key: "actif" },
@@ -166,16 +247,26 @@ const snackbarMessage = ref("");
 
 const dialogView = ref(false);
 const dialogEdit = ref(false);
+const dialogDelete = ref(false);
 const selected = ref(null);
 
 const editForm = ref(null);
 const editValid = ref(false);
-const editClient = ref({ id: null, nom: "", pseudoFacebook: "", telephone: "", email: "", adresse: "", ville: "", actif: true });
+const editClient = ref({
+  id: null,
+  nom: "",
+  pseudoFacebook: "",
+  telephone: "",
+  email: "",
+  adresse: "",
+  ville: "",
+  actif: true,
+});
 
 const rules = {
   required: (v) => !!v || "Champ requis",
-  min2: (v) => (v && v.length >= 2) || "Au moins 2 caractères",
-  phone: (v) => /^(\+?\d{8,15})$/.test(v) || "Numéro invalide",
+  min2: (v) => (v && v.length >= 2) || "Au moins 2 caracteres",
+  phone: (v) => /^(\+?\d{8,15})$/.test(v) || "Numero invalide",
   emailOptional: (v) => !v || /\S+@\S+\.\S+/.test(v) || "Email invalide",
 };
 
@@ -185,7 +276,16 @@ const voirClient = (item) => {
 };
 
 const editerClient = (item) => {
-  editClient.value = { id: item.id, nom: item.nom, pseudoFacebook: item.pseudoFacebook, telephone: item.telephone, email: item.email, adresse: item.adresse, ville: item.ville, actif: item.actif };
+  editClient.value = {
+    id: item.id,
+    nom: item.nom,
+    pseudoFacebook: item.pseudoFacebook,
+    telephone: item.telephone,
+    email: item.email,
+    adresse: item.adresse,
+    ville: item.ville,
+    actif: item.actif,
+  };
   dialogEdit.value = true;
 };
 
@@ -195,11 +295,28 @@ const saveEdit = async () => {
   if (!isValid) return;
   const idx = clients.value.findIndex((c) => c.id === editClient.value.id);
   if (idx !== -1) clients.value[idx] = { ...clients.value[idx], ...editClient.value };
-  snackbarMessage.value = "Client mis à jour";
+  snackbarMessage.value = "Client mis a jour";
   snackbar.value = true;
   dialogEdit.value = false;
 };
+
+const supprimerClient = (item) => {
+  selected.value = item;
+  dialogDelete.value = true;
+};
+
+const confirmDelete = () => {
+  if (!selected.value) return;
+  clients.value = clients.value.filter((c) => c.id !== selected.value.id);
+  snackbarMessage.value = "Client supprime";
+  snackbar.value = true;
+  dialogDelete.value = false;
+  selected.value = null;
+};
+
+const goToAdd = () => {
+  emit("open-add", "client-ajout");
+};
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
